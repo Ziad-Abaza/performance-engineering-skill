@@ -1,0 +1,38 @@
+{
+  "name": "performance-engineering-skill",
+  "version": "1.0.0",
+  "description": "Systematic performance engineering skill for AI coding agents (Laravel, Inertia.js, Vue 3, SQL, queues, caching).",
+  "type": "module",
+  "bin": {
+    "performance-engineering-skill": "bin/install.mjs"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "references",
+    "scripts",
+    "templates",
+    "bin"
+  ],
+  "keywords": [
+    "ai-skill",
+    "claude-skill",
+    "agents-skills",
+    "performance",
+    "laravel",
+    "inertia",
+    "vue",
+    "n+1",
+    "profiling"
+  ],
+  "author": "Ziad Abaza <zeyad.h.abaza@gmail.com> (https://github.com/Ziad-Abaza)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ziad-Abaza/performance-engineering-skill.git"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

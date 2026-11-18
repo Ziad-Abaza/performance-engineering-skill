@@ -38,11 +38,44 @@ reference file matching the active bottleneck — no wasted context.
 
 ## Installation
 
+### One-command install (recommended)
+
+**Node.js / npx** — runs straight from GitHub, no npm publish required:
+
+```bash
+# Global (all projects): ~/.agents/skills/performance-engineering
+npx -y github:Ziad-Abaza/performance-engineering-skill
+
+# Inside a project directory: <project>/.agents/skills/performance-engineering
+npx -y github:Ziad-Abaza/performance-engineering-skill --project
+
+# Other targets
+npx -y github:Ziad-Abaza/performance-engineering-skill --claude   # ~/.claude/skills
+npx -y github:Ziad-Abaza/performance-engineering-skill --devin    # ./.devin/skills
+npx -y github:Ziad-Abaza/performance-engineering-skill --cursor   # ./.cursor/skills
+npx -y github:Ziad-Abaza/performance-engineering-skill --dir /custom/path
+
+# Update (reinstall over existing copy) / remove
+npx -y github:Ziad-Abaza/performance-engineering-skill --force
+npx -y github:Ziad-Abaza/performance-engineering-skill --uninstall
+```
+
+**curl | bash** — no Node.js required:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Ziad-Abaza/performance-engineering-skill/main/install.sh | bash
+
+# project-scoped instead of global:
+curl -fsSL https://raw.githubusercontent.com/Ziad-Abaza/performance-engineering-skill/main/install.sh | bash -s -- --project
+```
+
+### Manual install
+
 Install into any of the standard agent skill locations. Pick **one** depending on
 whether you want the skill available globally (all projects) or vendored into a
 single project.
 
-### Option A — Git clone (recommended)
+#### Option A — Git clone
 
 ```bash
 # Global (all projects, cross-runtime)
