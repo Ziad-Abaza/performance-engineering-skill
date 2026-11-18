@@ -50,8 +50,10 @@ for required in SKILL.md references scripts templates; do
     [ -e "$SRC/$required" ] || { echo "error: missing $required in download" >&2; exit 1; }
 done
 
+# Copy only the functional payload — repo-level files (README.md, LICENSE,
+# package.json, install.sh) stay out of the skills directory.
 mkdir -p "$TARGET"
-cp -f "$SRC/SKILL.md" "$SRC/README.md" "$SRC/LICENSE" "$TARGET/" 2>/dev/null || true
+cp -f "$SRC/SKILL.md" "$TARGET/"
 cp -rf "$SRC/references" "$SRC/scripts" "$SRC/templates" "$TARGET/"
 
 echo ""

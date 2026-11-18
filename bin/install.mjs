@@ -19,7 +19,9 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const SKILL_NAME = 'performance-engineering';
-const SKILL_FILES = ['SKILL.md', 'README.md', 'LICENSE'];
+// Repo-level files (README.md, LICENSE, package.json, install.sh) are NOT copied —
+// the skills directory receives only the functional payload the agent needs.
+const SKILL_FILES = ['SKILL.md'];
 const SKILL_DIRS = ['references', 'scripts', 'templates'];
 
 const pkgRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
