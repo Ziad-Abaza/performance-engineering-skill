@@ -1,9 +1,3 @@
----
-noteId: "3e6817c0e36411f1aad2ebe97f951481"
-tags: []
-
----
-
 # performance-engineering
 
 A systematic, evidence-driven **performance engineering skill** for AI coding agents.
