@@ -44,7 +44,7 @@ public function show(WorkOrder $workOrder)
 ```
 
 > [!WARNING]
-> **API Syntax Note**: `Inertia::defer(callable $callback, string $group = 'default')` accepts the group name as its **second argument**. Do NOT chain `->group('secondary')` because `DeferProp::group()` is an internal getter method returning a string, not a fluent modifier.
+> **API Syntax Note**: `Inertia::defer(callable $callback, string $group = 'default', bool $rescue = false)` accepts the group name as its **second argument**. Do NOT chain `->group('secondary')` because `DeferProp::group()` is an internal getter method returning a string, not a fluent modifier. inertia-laravel v3.1+ adds the `rescue` flag — when `true`, a failing deferred callback resolves gracefully instead of erroring the follow-up request.
 
 ---
 

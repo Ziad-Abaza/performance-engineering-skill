@@ -16,7 +16,7 @@ NC='\033[0m'
 echo -e "${CYAN}=== Scanning for Performance Anti-Patterns in: ${TARGET_DIR} ===${NC}"
 echo -e "${GRAY}Searching application paths (excluding vendor, node_modules, storage, etc.)...${NC}\n"
 
-EXCLUDE_DIRS="--exclude-dir=vendor --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=storage --exclude-dir=dist --exclude-dir=public --exclude-dir=bootstrap --exclude-dir=tests"
+EXCLUDE_DIRS="--exclude-dir=vendor --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=storage --exclude-dir=dist --exclude-dir=public --exclude-dir=bootstrap --exclude-dir=[Tt]ests"
 
 # 1. Queries inside loops
 echo -e "${YELLOW}[1] Scanning for queries inside loops (foreach/while)...${NC}"
@@ -29,7 +29,7 @@ fi
 
 # 2. Dangerous chunk() usage with updates
 echo -e "\n${YELLOW}[2] Scanning for chunk() with updates (should be chunkById)...${NC}"
-CHUNK_MATCHES=$(grep -rnE $EXCLUDE_DIRS --include="*.php" -A 8 '->chunk\(' "$TARGET_DIR" 2>/dev/null | grep -E '->(update|save|delete)\(' || true)
+CHUNK_MATCHES=$(grep -rnE $EXCLUDE_DIRS --include="*.php" -A 8 -e '->chunk\(' "$TARGET_DIR" 2>/dev/null | grep -E -- '->(update|save|delete)\(' || true)
 if [ -n "$CHUNK_MATCHES" ]; then
     echo -e "${RED}${CHUNK_MATCHES}${NC}"
     echo -e "${GRAY}  Replace chunk() with chunkById() to avoid index offset skips.${NC}"
@@ -63,7 +63,8 @@ INERTIA_ISSUES=0
 
 # Check for chained ->group() on defer or Inertia::lazy
 while IFS= read -r file; do
-    if grep -qz 'Inertia::defer.*->group(' "$file" 2>/dev/null; then
+    # grep -z is GNU-only; flatten newlines for a portable cross-line match (BSD/macOS-safe)
+    if tr '\n' ' ' < "$file" | grep -q 'Inertia::defer.*->group(' 2>/dev/null; then
         echo -e "${RED}  [!] Chained ->group() bug on defer: ${file}${NC}"
         echo -e "${GRAY}      Inertia::defer(\$fn, 'group_name') takes the group as 2nd parameter, not a chained method.${NC}"
         INERTIA_ISSUES=$((INERTIA_ISSUES + 1))
@@ -73,7 +74,7 @@ while IFS= read -r file; do
         echo -e "${GRAY}      Inertia::lazy() is removed in Inertia v3; replace with Inertia::optional().${NC}"
         INERTIA_ISSUES=$((INERTIA_ISSUES + 1))
     fi
-done < <(find "$TARGET_DIR" -type f -name "*.php" ! -path "*/vendor/*" ! -path "*/storage/*" ! -path "*/tests/*" 2>/dev/null)
+done < <(find "$TARGET_DIR" -type f -name "*.php" ! -path "*/vendor/*" ! -path "*/storage/*" ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/[Tt]ests/*" 2>/dev/null)
 
 if [ "$INERTIA_ISSUES" -eq 0 ]; then
     echo -e "${GRAY}  No Inertia API anti-patterns detected.${NC}"
@@ -83,14 +84,20 @@ fi
 echo -e "\n${YELLOW}[6] Scanning PostgreSQL migration safe indexing...${NC}"
 PG_MIGRATION_ISSUES=0
 while IFS= read -r file; do
-    if grep -q 'CREATE\s\+INDEX\s\+CONCURRENTLY' "$file" 2>/dev/null; then
-        if ! grep -q '\$withinTransaction\s*=\s*false' "$file" 2>/dev/null; then
+    # [[:space:]] and -E used instead of \s (GNU-only) for BSD/macOS portability
+    if grep -qE 'CREATE[[:space:]]+INDEX[[:space:]]+CONCURRENTLY' "$file" 2>/dev/null; then
+        if ! grep -qE '\$withinTransaction[[:space:]]*=[[:space:]]*false' "$file" 2>/dev/null; then
             echo -e "${RED}  [!] Postgres Concurrent Index missing \$withinTransaction = false: ${file}${NC}"
-            echo -e "${GRAY}      Postgres transactions block CONCURRENTLY. Add: public bool \$withinTransaction = false;${NC}"
+            echo -e "${GRAY}      Postgres transactions block CONCURRENTLY. Add: public \$withinTransaction = false;${NC}"
             PG_MIGRATION_ISSUES=$((PG_MIGRATION_ISSUES + 1))
         fi
     fi
-done < <(find "$TARGET_DIR" -type f -name "*.php" -path "*/migrations/*" 2>/dev/null)
+    if grep -qE '(public|protected)[[:space:]]+bool[[:space:]]+\$withinTransaction' "$file" 2>/dev/null; then
+        echo -e "${RED}  [!] Typed \$withinTransaction property (PHP FATAL): ${file}${NC}"
+        echo -e "${GRAY}      Base Migration property is untyped; 'public bool' fatals. Use: public \$withinTransaction = false;${NC}"
+        PG_MIGRATION_ISSUES=$((PG_MIGRATION_ISSUES + 1))
+    fi
+done < <(find "$TARGET_DIR" -type f -name "*.php" -path "*/[Mm]igrations/*" ! -path "*/vendor/*" 2>/dev/null)
 
 if [ "$PG_MIGRATION_ISSUES" -eq 0 ]; then
     echo -e "${GRAY}  No PostgreSQL concurrent index transaction issues detected.${NC}"

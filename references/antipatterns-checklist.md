@@ -16,7 +16,8 @@ Use this checklist during code review, static analysis, or discovery to quickly 
 | **Hidden N+1 in Model `$appends`** | Accessing relationships inside accessor functions listed in `$appends`. | Remove from `$appends`; calculate via query subqueries (`withSum`) or dedicated API Resource. |
 | **Offset Shift during Chunking** | Updating records inside `chunk($n, function($items) { ... })`. | Use `chunkById($n, ...)` to preserve index determinism. |
 | **Unindexed Foreign Keys** | Columns named `*_id` in migrations without `$table->index()` or foreign key constraint. | Add composite or individual indexes for queried columns. |
-| **PostgreSQL Migration with `CREATE INDEX CONCURRENTLY` in Transaction** | Migration without `public bool $withinTransaction = false;` failing with error `cannot run inside a transaction block`. | Add `public bool $withinTransaction = false;` to migration class. |
+| **PostgreSQL Migration with `CREATE INDEX CONCURRENTLY` in Transaction** | Migration without `$withinTransaction = false` failing with error `cannot run inside a transaction block`. | Add `public $withinTransaction = false;` to migration class. |
+| **Typed `$withinTransaction` property** | `public bool $withinTransaction = false;` in a migration — PHP fatals with `Type of X::$withinTransaction must not be defined` because the base `Migration` property is untyped. | Declare it untyped: `public $withinTransaction = false;` |
 
 ---
 
@@ -40,7 +41,7 @@ Use this checklist during code review, static analysis, or discovery to quickly 
 | Smell | Detection Heuristic / Code Example | Corrective Pattern |
 | :--- | :--- | :--- |
 | **`Cache::tags()` on Non-Redis Drivers** | Calling `Cache::tags([...])` when cache driver is `file` or `database`. | Verify driver is Redis/Memcached, or use prefix key versioning (`v{version}:key`). |
-| **`Cache::lock()` on File Driver** | Attempting atomic locking when `CACHE_STORE=file`. | Switch to `redis` or `database` cache driver. |
+| **`Cache::lock()` on File Driver (multi-node only)** | Relying on file-driver atomic locks while running multiple web servers/pods — locks are local to each node's filesystem and do not coordinate across nodes. | Single node: file locks work via `flock`, no change needed. Multi-node: switch `CACHE_STORE` to `redis` or `database`. |
 | **Monolithic Queue** | Resizing videos, generating PDFs, and sending OTP emails all on `default`. | Isolate into `high`, `default`, `media`, and `reports`. |
 | **Serializing Models with Loaded Relations** | Passing `$model` with 10 eager-loaded relations into job constructor. | Pass model ID: `__construct(int $id)` or call `$model->withoutRelations()`. |
 | **Timeout > Retry After** | `$timeout = 120` in Job while `retry_after = 90` in `config/queue.php`. | Ensure `retry_after` is always at least 30s larger than job `$timeout`. |

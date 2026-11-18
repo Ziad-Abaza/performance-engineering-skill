@@ -52,12 +52,12 @@ if [ -f "$COMPOSER_PATH" ]; then
     echo -e "\n${GREEN}[Backend - composer.json detected]${NC}"
 
     # Laravel Framework
-    LARAVEL_VER=$(grep -E '"laravel/framework"' "$COMPOSER_PATH" | head -n 1 | sed -E 's/.*"laravel\/framework"\s*:\s*"([^"]+)".*/\1/')
+    LARAVEL_VER=$(grep -E '"laravel/framework"' "$COMPOSER_PATH" | head -n 1 | sed -E 's/.*"laravel\/framework"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     if [ -n "$LARAVEL_VER" ]; then
         echo -e "${WHITE}  * Laravel Framework: ${LARAVEL_VER}${NC}"
         echo -e "${GRAY}    - Model::preventLazyLoading: Supported${NC}"
         echo -e "${GRAY}    - withExists / withSum / withAvg / lazyById: Supported${NC}"
-        
+
         # Check Laravel version >= 11
         MAJOR_VER=$(echo "$LARAVEL_VER" | grep -oE '[0-9]+' | head -n 1)
         if [ -n "$MAJOR_VER" ] && [ "$MAJOR_VER" -ge 11 ]; then
@@ -66,7 +66,7 @@ if [ -f "$COMPOSER_PATH" ]; then
     fi
 
     # Inertia Laravel Adapter
-    INERTIA_VER=$(grep -E '"inertiajs/inertia-laravel"' "$COMPOSER_PATH" | head -n 1 | sed -E 's/.*"inertiajs\/inertia-laravel"\s*:\s*"([^"]+)".*/\1/')
+    INERTIA_VER=$(grep -E '"inertiajs/inertia-laravel"' "$COMPOSER_PATH" | head -n 1 | sed -E 's/.*"inertiajs\/inertia-laravel"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     if [ -n "$INERTIA_VER" ]; then
         echo -e "${WHITE}  * Inertia Laravel Adapter: ${INERTIA_VER}${NC}"
         IN_MAJOR=$(echo "$INERTIA_VER" | grep -oE '[0-9]+' | head -n 1)
@@ -81,7 +81,7 @@ if [ -f "$COMPOSER_PATH" ]; then
     fi
 
     # Spatie MediaLibrary
-    SPATIE_VER=$(grep -E '"spatie/laravel-medialibrary"' "$COMPOSER_PATH" | head -n 1 | sed -E 's/.*"spatie\/laravel-medialibrary"\s*:\s*"([^"]+)".*/\1/')
+    SPATIE_VER=$(grep -E '"spatie/laravel-medialibrary"' "$COMPOSER_PATH" | head -n 1 | sed -E 's/.*"spatie\/laravel-medialibrary"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     if [ -n "$SPATIE_VER" ]; then
         echo -e "${WHITE}  * Spatie MediaLibrary: ${SPATIE_VER}${NC}"
         echo -e "${GRAY}    - Ensure conversions are marked ->queued()${NC}"
@@ -101,14 +101,14 @@ if [ -f "$PACKAGE_PATH" ]; then
     echo -e "\n${GREEN}[Frontend - package.json detected]${NC}"
 
     # Vue
-    VUE_VER=$(grep -E '"vue"' "$PACKAGE_PATH" | head -n 1 | sed -E 's/.*"vue"\s*:\s*"([^"]+)".*/\1/')
+    VUE_VER=$(grep -E '"vue"' "$PACKAGE_PATH" | head -n 1 | sed -E 's/.*"vue"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     if [ -n "$VUE_VER" ]; then
         echo -e "${WHITE}  * Vue: ${VUE_VER}${NC}"
         echo -e "${GRAY}    - shallowRef, markRaw, defineAsyncComponent, v-memo: Supported${NC}"
     fi
 
     # Inertia Vue3 / React
-    INERTIA_CLIENT=$(grep -E '"@inertiajs/vue3"' "$PACKAGE_PATH" | head -n 1 | sed -E 's/.*"@inertiajs\/vue3"\s*:\s*"([^"]+)".*/\1/')
+    INERTIA_CLIENT=$(grep -E '"@inertiajs/vue3"' "$PACKAGE_PATH" | head -n 1 | sed -E 's/.*"@inertiajs\/vue3"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     if [ -n "$INERTIA_CLIENT" ]; then
         echo -e "${WHITE}  * @inertiajs/vue3: ${INERTIA_CLIENT}${NC}"
         IN_C_MAJOR=$(echo "$INERTIA_CLIENT" | grep -oE '[0-9]+' | head -n 1)
@@ -118,7 +118,8 @@ if [ -f "$PACKAGE_PATH" ]; then
     fi
 
     # Vite
-    VITE_VER=$(grep -E '"vite"' "$PACKAGE_PATH" | head -n 1 | sed -E 's/.*"vite"\s*:\s*"([^"]+)".*/\1/')
+    # Require a semver-looking value so the npm script "dev": "vite" doesn't match
+    VITE_VER=$(grep -E '"vite"[[:space:]]*:[[:space:]]*"[\^~>= ]*[0-9]' "$PACKAGE_PATH" | head -n 1 | sed -E 's/.*"vite"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     if [ -n "$VITE_VER" ]; then
         echo -e "${WHITE}  * Vite: ${VITE_VER} (Code splitting via dynamic import supported)${NC}"
     fi

@@ -8,7 +8,7 @@ Before designing a cache or concurrency solution, check the active cache driver 
 | Cache Feature | Redis | Memcached | Database | File / Array |
 | :--- | :--- | :--- | :--- | :--- |
 | **`Cache::tags()`** | ✅ Supported | ✅ Supported | ❌ Throws `BadMethodCallException` | ❌ Not supported (`array` supports in-memory only) |
-| **`Cache::lock()`** | ✅ Atomic | ✅ Atomic | ✅ Supported via `cache_locks` table | ❌ File throws `BadMethodCallException` |
+| **`Cache::lock()`** | ✅ Atomic, distributed | ✅ Atomic, distributed | ✅ Supported via `cache_locks` table | ⚠️ `FileStore` implements `LockProvider` (works via `flock`) but is **single-server only** — not shared across nodes/pods. `array` works in-process only |
 | **Distributed Expiry** | ✅ Native TTL | ✅ Native TTL | ✅ Purged via query | ⚠️ Disk read/write overhead |
 
 > [!CAUTION]
@@ -60,6 +60,8 @@ $data = Cache::remember($cacheKey, 3600, fn () => WorkOrder::find($id));
 // 2. Invalidate all work order cache for this tenant instantaneously by bumping the version:
 public static function invalidateTenantWorkOrders(int $tenantId): void
 {
+    // Cache::increment returns false when the key doesn't exist — seed it first
+    Cache::add("t:{$tenantId}:wo:version", 1, now()->addDays(30));
     Cache::increment("t:{$tenantId}:wo:version");
 }
 ```

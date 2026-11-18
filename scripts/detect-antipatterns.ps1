@@ -56,9 +56,13 @@ if ($chunkCount -eq 0) { Write-Host "  No dangerous chunk() updates detected." -
 
 # 3. Model $appends with potential N+1 (supports app/Models, Modules/*/Entities, src/Domain)
 Write-Host "`n[3] Scanning for Model `$appends attributes..." -ForegroundColor Yellow
-$modelFiles = $phpFiles | Where-Object { 
-    $_.FullName -match '[\\/](Models|Entities)[\\/]' -or 
-    (Get-Content $_.FullName -TotalCount 25 -ErrorAction SilentlyContinue | Select-String -Pattern 'extends\s+Model') 
+$nonModelDirRegex = '[\\/](Controllers|Requests|Middleware|Jobs|Listeners|Console|Commands|Providers|Exceptions|Mail|Notifications|Events|Policies|Rules|Database|Migrations|Routes|config|resources|lang)[\\/]'
+$modelFiles = $phpFiles | Where-Object {
+    $_.FullName -match '[\\/](Models|Entities|Domain)[\\/]' -or
+    (
+        $_.FullName -notmatch $nonModelDirRegex -and
+        (Get-Content $_.FullName -TotalCount 25 -ErrorAction SilentlyContinue | Select-String -Pattern 'extends\s+Model')
+    )
 }
 $appendsMatches = $modelFiles | Select-String -Pattern 'protected\s+\$appends\s*='
 $appendsCount = 0
@@ -109,11 +113,18 @@ $migrationFiles = $phpFiles | Where-Object { $_.FullName -match '[\\/]migrations
 $pgMigrationCount = 0
 foreach ($file in $migrationFiles) {
     $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
+    $relPath = $file.FullName.Replace((Resolve-Path $TargetDir).Path, '').TrimStart('\/')
+
     if ($content -match 'CREATE\s+INDEX\s+CONCURRENTLY' -and $content -notmatch '\$withinTransaction\s*=\s*false') {
         $pgMigrationCount++
-        $relPath = $file.FullName.Replace((Resolve-Path $TargetDir).Path, '').TrimStart('\/')
         Write-Host "  [!] Postgres Concurrent Index missing `$withinTransaction = false: $relPath" -ForegroundColor Red
-        Write-Host "      Postgres transactions block CONCURRENTLY. Add: public bool `$withinTransaction = false;" -ForegroundColor Gray
+        Write-Host "      Postgres transactions block CONCURRENTLY. Add: public `$withinTransaction = false;" -ForegroundColor Gray
+    }
+
+    if ($content -match '(public|protected)\s+bool\s+\$withinTransaction') {
+        $pgMigrationCount++
+        Write-Host "  [!] Typed `$withinTransaction property (PHP FATAL): $relPath" -ForegroundColor Red
+        Write-Host "      Base Migration property is untyped; 'public bool' fatals. Use: public `$withinTransaction = false;" -ForegroundColor Gray
     }
 }
 if ($pgMigrationCount -eq 0) { Write-Host "  No PostgreSQL concurrent index transaction issues detected." -ForegroundColor DarkGray }

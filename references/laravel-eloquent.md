@@ -6,6 +6,7 @@ Before applying optimizations, verify the Laravel version in `composer.json`:
 - `withExists()`: Laravel 8.x+
 - `withSum()`, `withAvg()`, `withMin()`, `withMax()`: Laravel 8.x+
 - `lazy()` / `lazyById()`: Laravel 8.x+
+- `Model::automaticallyEagerLoadRelationships()`: Laravel 12+ — auto-eager-loads lazily accessed relations as a safety net (prefer explicit `with()` in new code).
 - `DB::transaction()` with deadlock retries: Available across all modern versions.
 
 ---
@@ -180,7 +181,7 @@ PostgreSQL allows zero-downtime index creation via `CREATE INDEX CONCURRENTLY`.
 > [!CAUTION]
 > **PostgreSQL Migration Requirement**: In PostgreSQL, `CREATE INDEX CONCURRENTLY` **cannot run inside a transaction block**. Because Laravel automatically wraps migrations in database transactions on PostgreSQL, the migration will throw:
 > `SQLSTATE[25001]: Active sql transaction: 7 ERROR: CREATE INDEX CONCURRENTLY cannot run inside a transaction block`
-> You **must** set `public bool $withinTransaction = false;` on the migration class!
+> You **must** set `public $withinTransaction = false;` on the migration class! Declare it **untyped** — Laravel's base `Migration` class defines `$withinTransaction` without a type, and PHP fatals (`Type of X::$withinTransaction must not be defined`) if a child redeclares it as `public bool`.
 
 ```php
 use Illuminate\Database\Migrations\Migration;
@@ -189,7 +190,8 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     // CRITICAL FOR POSTGRESQL: Disables automatic transaction wrapping
-    public bool $withinTransaction = false;
+    // NOTE: keep UNTYPED — parent property has no type; adding `bool` fatals in PHP
+    public $withinTransaction = false;
 
     public function up(): void
     {
